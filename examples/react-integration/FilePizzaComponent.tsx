@@ -457,7 +457,6 @@ export default function FilePizzaComponent() {
               <ul className="download-files-list">
                 {completedFiles.map((file, index) => (
                   <li key={index} className="download-file-item">
-                    <span className="file-name">{file.fileName} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                     <button
                       className="download-file-button"
                       onClick={() => downloadFile(file.fileName)}
@@ -465,6 +464,7 @@ export default function FilePizzaComponent() {
                     >
                       {downloadingFile === file.fileName ? 'Downloading...' : 'Download'}
                     </button>
+                    <span className="file-name">{file.fileName} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                   </li>
                 ))}
               </ul>
