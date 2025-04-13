@@ -14,6 +14,7 @@ export class FilePizzaUploader extends EventEmitter {
   private password?: string;
   private filePizzaServerUrl: string;
   private channelInfo?: { longSlug: string; shortSlug: string; secret?: string };
+  private providedLongSlug?: string;
   private iceServers?: RTCIceServer[];
   private renewalTimer?: NodeJS.Timeout;
 
@@ -24,10 +25,12 @@ export class FilePizzaUploader extends EventEmitter {
   constructor(options: {
     filePizzaServerUrl?: string;
     password?: string;
+    providedLongSlug?: string;
   } = {}) {
     super();
-    this.filePizzaServerUrl = options.filePizzaServerUrl || 'https://file.pizza';
+    this.filePizzaServerUrl = options.filePizzaServerUrl || 'http://localhost:8081';
     this.password = options.password;
+    this.providedLongSlug = options.providedLongSlug;
   }
 
   /**
@@ -65,7 +68,7 @@ export class FilePizzaUploader extends EventEmitter {
 
     // Create channel
     if (this.peer.id) {
-      await this.createChannel(this.peer.id);
+      await this.createChannel(this.peer.id, this.providedLongSlug || undefined);
       this.startChannelRenewal();
     }
   }
@@ -171,12 +174,18 @@ export class FilePizzaUploader extends EventEmitter {
   /**
    * Create a new channel on the FilePizza server
    */
-  private async createChannel(uploaderPeerID: string): Promise<void> {
+  private async createChannel(uploaderPeerID: string, longSlug?: string): Promise<void> {
     try {
+      const payload: { uploaderPeerID: string; providedLongSlug?: string } = { uploaderPeerID };
+
+      if (longSlug) {
+        payload.providedLongSlug = longSlug;
+      }
+
       const response = await fetch(`${this.filePizzaServerUrl}/api/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uploaderPeerID }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -670,7 +679,7 @@ export class FilePizzaDownloader extends EventEmitter {
     filePizzaServerUrl?: string;
   } = {}) {
     super();
-    this.filePizzaServerUrl = options.filePizzaServerUrl || 'https://file.pizza';
+    this.filePizzaServerUrl = options.filePizzaServerUrl || 'http://localhost:8081';
   }
 
   /**

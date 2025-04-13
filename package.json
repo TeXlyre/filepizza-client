@@ -11,8 +11,8 @@
     "build": "tsc",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "example": "vite examples/react-integration --port 8081",
-    "build:example": "vite build examples/react-integration"
+    "example": "vite examples/simple-fileshare --port 8081",
+    "build:example": "vite build examples/simple-fileshare"
   },
   "dependencies": {
     "debug": "^4.3.4",
