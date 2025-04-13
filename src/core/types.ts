@@ -1,7 +1,13 @@
-import type { DataConnection } from 'peerjs'
+// src/core/types.ts
+export interface EventEmitter {
+  on(event: string, listener: (...args: any[]) => void): this;
+  off(event: string, listener: (...args: any[]) => void): this;
+  emit(event: string, ...args: any[]): boolean;
+}
 
-export type UploadedFile = File & { entryFullPath?: string }
-
+/**
+ * Connection status
+ */
 export enum ConnectionStatus {
   Pending = 'PENDING',
   Ready = 'READY',
@@ -15,7 +21,40 @@ export enum ConnectionStatus {
   Error = 'ERROR'
 }
 
-export type ConnectionInfo = {
+/**
+ * File information
+ */
+export interface FileInfo {
+  fileName: string;
+  size: number;
+  type: string;
+}
+
+/**
+ * Interface for a completed file ready to download
+ */
+export interface CompletedFile extends FileInfo {
+  data: Uint8Array;
+  downloadUrl?: string;
+}
+
+/**
+ * Progress information
+ */
+export interface ProgressInfo {
+  fileIndex: number;
+  fileName: string;
+  totalFiles: number;
+  currentFileProgress: number;
+  overallProgress: number;
+  bytesTransferred: number;
+  totalBytes: number;
+}
+
+/**
+ * Connection information
+ */
+export interface ConnectionInfo {
   id: string;
   status: ConnectionStatus;
   browserName?: string;
@@ -26,56 +65,19 @@ export type ConnectionInfo = {
   mobileModel?: string;
 }
 
-export type FileInfo = {
-  fileName: string;
-  size: number;
-  type: string;
-}
-
-export type ProgressInfo = {
-  fileIndex: number;
-  fileName: string;
-  totalFiles: number;
-  currentFileProgress: number;
-  overallProgress: number;
-  bytesTransferred: number;
-  totalBytes: number;
-}
-
-export type Channel = {
-  secret?: string;
-  longSlug: string;
-  shortSlug: string;
-  uploaderPeerID: string;
-}
-
-export interface EventEmitter {
-  on(event: string, listener: (...args: any[]) => void): this;
-  off(event: string, listener: (...args: any[]) => void): this;
-  emit(event: string, ...args: any[]): boolean;
-}
-
-export interface UploaderOptions {
-  serverUrl?: string;
-  password?: string;
-  config?: Partial<import('./config').FilePizzaConfig>;
-}
-
-export interface DownloaderOptions {
-  serverUrl?: string;
-  config?: Partial<import('./config').FilePizzaConfig>;
-}
-
-// Internal type for connection management
-export interface ConnectionContext {
-  status: ConnectionStatus;
-  dataConnection: DataConnection;
-  fileIndex: number;
-  filesInfo: FileInfo[];
-  totalFiles: number;
-  bytesTransferred: number;
-  totalBytes: number;
-  currentFileProgress: number;
-  uploadingFileName?: string;
-  uploadingOffset?: number;
+/**
+ * Message types for peer-to-peer communication
+ */
+export enum MessageType {
+  RequestInfo = 'RequestInfo',
+  Info = 'Info',
+  Start = 'Start',
+  Chunk = 'Chunk',
+  Pause = 'Pause',
+  Resume = 'Resume',
+  Done = 'Done',
+  Error = 'Error',
+  PasswordRequired = 'PasswordRequired',
+  UsePassword = 'UsePassword',
+  Report = 'Report',
 }

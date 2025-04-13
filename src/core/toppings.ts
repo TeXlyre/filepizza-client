@@ -1,5 +1,4 @@
-// This file can be moved directly from src/toppings.ts without changes
-// No modifications needed as it's just an array of strings
+// src/core/toppings.ts
 export default [
   'alfalfa',
   'almonds',

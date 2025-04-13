@@ -1,3 +1,4 @@
+// src/utils/event-emitter.ts
 import { EventEmitter as EventEmitterInterface } from '../core/types'
 
 export class EventEmitter implements EventEmitterInterface {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FilePizzaUploader, FilePizzaDownloader, ConnectionStatus, CompletedFile } from '../../src/filepizza-client';
+import { FilePizzaUploader, FilePizzaDownloader } from '../../src';
 
 /**
  * FilePizza component that allows uploading and downloading files

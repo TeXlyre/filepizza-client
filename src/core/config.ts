@@ -1,4 +1,4 @@
-// Re-export the existing toppings for slug generation
+// src/core/config.ts
 import toppings from './toppings'
 
 export interface FilePizzaConfig {
@@ -50,13 +50,6 @@ const defaultConfig: FilePizzaConfig = {
     maxAttempts: 8,
   },
   chunkSize: 256 * 1024, // 256 KB
-}
-
-export function mergeConfig(config?: Partial<FilePizzaConfig>): FilePizzaConfig {
-  return {
-    ...defaultConfig,
-    ...config,
-  }
 }
 
 export default defaultConfig

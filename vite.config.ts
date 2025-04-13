@@ -10,20 +10,6 @@ export default defineConfig({
       '../../src/filepizza-client': path.resolve(__dirname, './src/filepizza-client')
     }
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false
-      },
-      '/download': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false
-      }
-    }
-  },
   build: {
     outDir: 'dist-example',
     sourcemap: true

@@ -1,3 +1,4 @@
+// src/utils/download-helper.ts
 export class DownloadHelper {
   private static isNewChromiumBased() {
     return 'showSaveFilePicker' in window;
