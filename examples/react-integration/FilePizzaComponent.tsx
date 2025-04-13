@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FilePizzaUploader, FilePizzaDownloader, ConnectionStatus } from '../../src/filepizza-client';
+import { FilePizzaUploader, FilePizzaDownloader, ConnectionStatus, CompletedFile } from '../../src/filepizza-client';
 
 /**
  * FilePizza component that allows uploading and downloading files
@@ -14,6 +14,8 @@ export default function FilePizzaComponent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState('');
+  const [completedFiles, setCompletedFiles] = useState([]);
+  const [downloadingFile, setDownloadingFile] = useState(null);
 
   const uploaderRef = useRef(null);
   const downloaderRef = useRef(null);
@@ -86,6 +88,7 @@ export default function FilePizzaComponent() {
   const initializeDownloader = async () => {
     setMode('download');
     setError(null);
+    setCompletedFiles([]);
 
     try {
       const downloader = new FilePizzaDownloader({
@@ -112,8 +115,19 @@ export default function FilePizzaComponent() {
         setProgress(progressInfo);
       });
 
-      downloader.on('complete', () => {
-        console.log('Download complete!');
+      downloader.on('fileComplete', (file) => {
+        setCompletedFiles(prev => {
+          // Add file if it doesn't exist yet
+          if (!prev.some(f => f.fileName === file.fileName)) {
+            return [...prev, file];
+          }
+          return prev;
+        });
+      });
+
+      downloader.on('complete', (files) => {
+        console.log('Download complete!', files);
+        setCompletedFiles(files);
       });
 
       downloader.on('error', (err) => {
@@ -168,6 +182,36 @@ export default function FilePizzaComponent() {
     }
   };
 
+  // Download specific file
+  const downloadFile = async (fileName) => {
+    if (!downloaderRef.current) return;
+
+    try {
+      setDownloadingFile(fileName);
+      await downloaderRef.current.downloadFile(fileName);
+      setDownloadingFile(null);
+    } catch (err) {
+      console.error('File download error:', err);
+      setError(err.message || 'Failed to download file');
+      setDownloadingFile(null);
+    }
+  };
+
+  // Download all files
+  const downloadAllFiles = async () => {
+    if (!downloaderRef.current) return;
+
+    try {
+      setDownloadingFile('all');
+      await downloaderRef.current.downloadAllFiles();
+      setDownloadingFile(null);
+    } catch (err) {
+      console.error('All files download error:', err);
+      setError(err.message || 'Failed to download all files');
+      setDownloadingFile(null);
+    }
+  };
+
   // Reset application state
   const resetApp = () => {
     if (uploaderRef.current) {
@@ -188,6 +232,8 @@ export default function FilePizzaComponent() {
     setPassword('');
     setError(null);
     setDownloadUrl('');
+    setCompletedFiles([]);
+    setDownloadingFile(null);
   };
 
   // Format progress percentage
@@ -400,6 +446,37 @@ export default function FilePizzaComponent() {
                 <div className="complete-message">
                   Download Complete!
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Completed files with download buttons */}
+          {completedFiles.length > 0 && progress?.overallProgress === 1 && (
+            <div className="completed-files">
+              <h3>Ready to download:</h3>
+              <ul className="download-files-list">
+                {completedFiles.map((file, index) => (
+                  <li key={index} className="download-file-item">
+                    <span className="file-name">{file.fileName} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    <button
+                      className="download-file-button"
+                      onClick={() => downloadFile(file.fileName)}
+                      disabled={downloadingFile === file.fileName || downloadingFile === 'all'}
+                    >
+                      {downloadingFile === file.fileName ? 'Downloading...' : 'Download'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {completedFiles.length > 1 && (
+                <button
+                  className="download-all-button"
+                  onClick={downloadAllFiles}
+                  disabled={downloadingFile !== null}
+                >
+                  {downloadingFile === 'all' ? 'Downloading All...' : 'Download All Files'}
+                </button>
               )}
             </div>
           )}

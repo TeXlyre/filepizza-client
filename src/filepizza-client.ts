@@ -1,6 +1,6 @@
 import Peer, { DataConnection } from 'peerjs'
 import { EventEmitter } from './utils/event-emitter'
-import { DownloadHelper } from "./utils/download-helper";
+import { DownloadHelper } from './utils/download-helper';
 
 /**
  * Connection status
@@ -25,6 +25,14 @@ export interface FileInfo {
   fileName: string;
   size: number;
   type: string;
+}
+
+/**
+ * Interface for a completed file ready to download
+ */
+export interface CompletedFile extends FileInfo {
+  data: Uint8Array;
+  downloadUrl?: string;
 }
 
 /**
@@ -727,6 +735,7 @@ export class FilePizzaDownloader extends EventEmitter {
   private isPasswordInvalid = false;
   private errorMessage?: string;
   private iceServers?: RTCIceServer[];
+  private completedFiles: CompletedFile[] = [];
 
   /**
    * Create a new FilePizza downloader
@@ -1189,8 +1198,8 @@ export class FilePizzaDownloader extends EventEmitter {
       // Close this file's stream
       fileStream.close();
 
-      // Trigger the file download
-      this.saveFileToDevice(fileName);
+      // Store the completed file
+      this.storeCompletedFile(fileName);
 
       // Move to next file if available
       this.currentFileIndex++;
@@ -1200,7 +1209,7 @@ export class FilePizzaDownloader extends EventEmitter {
         this.requestNextFile();
       } else {
         this.status = ConnectionStatus.Done;
-        this.emit('complete');
+        this.emit('complete', this.completedFiles);
       }
     }
   }
@@ -1235,25 +1244,76 @@ export class FilePizzaDownloader extends EventEmitter {
   }
 
   /**
-   * Save file to the user's device
+   * Store a completed file
    */
-  private async saveFileToDevice(fileName: string): Promise<void> {
+  private async storeCompletedFile(fileName: string): Promise<void> {
     const fileStream = this.fileStreams.get(fileName);
+    const fileInfo = this.filesInfo.find(info => info.fileName === fileName);
 
-    if (!fileStream) {
-      console.error(`No stream found for file: ${fileName}`);
+    if (!fileStream || !fileInfo) {
+      console.error(`No stream or file info found for file: ${fileName}`);
       return;
     }
 
     try {
-      // Clone the stream since we can only use it once
-      const clonedStream = fileStream.stream.tee()[0];
+      // Clone the stream since we're going to use it
+      const [streamToRead, streamToStore] = fileStream.stream.tee();
 
-      // Download the file
-      await DownloadHelper.downloadFile(fileName, clonedStream);
+      // Convert stream to Uint8Array
+      const fileData = await DownloadHelper.streamToUint8Array(streamToRead);
+
+      // Store the completed file
+      const completedFile: CompletedFile = {
+        ...fileInfo,
+        data: fileData,
+      };
+
+      this.completedFiles.push(completedFile);
+
+      // Emit fileComplete event
+      this.emit('fileComplete', completedFile);
     } catch (error) {
-      console.error(`Error saving file ${fileName}:`, error);
-      this.emit('error', `Failed to save file: ${error.message}`);
+      console.error(`Error storing file ${fileName}:`, error);
+      this.emit('error', `Failed to store file: ${error.message}`);
+    }
+  }
+
+  /**
+   * Download a completed file
+   */
+  public async downloadFile(fileName: string): Promise<void> {
+    const completedFile = this.completedFiles.find(file => file.fileName === fileName);
+
+    if (!completedFile) {
+      throw new Error(`File not found: ${fileName}`);
+    }
+
+    try {
+      await DownloadHelper.downloadFile(fileName, completedFile.data);
+    } catch (error) {
+      console.error(`Error downloading file ${fileName}:`, error);
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get completed files
+   */
+  public getCompletedFiles(): CompletedFile[] {
+    return [...this.completedFiles];
+  }
+
+  /**
+   * Download all completed files
+   */
+  public async downloadAllFiles(): Promise<void> {
+    for (const file of this.completedFiles) {
+      try {
+        await this.downloadFile(file.fileName);
+      } catch (error) {
+        console.error(`Error downloading file ${file.fileName}:`, error);
+        // Continue with other files even if one fails
+      }
     }
   }
 

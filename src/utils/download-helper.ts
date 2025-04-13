@@ -3,15 +3,17 @@ export class DownloadHelper {
     return 'showSaveFilePicker' in window;
   }
 
-  static async downloadFile(fileName: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  static async downloadFile(fileName: string, data: Blob | Uint8Array): Promise<void> {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+
     if (this.isNewChromiumBased()) {
-      await this.downloadWithFileSystemAccessAPI(fileName, stream);
+      await this.downloadWithFileSystemAccessAPI(fileName, blob);
     } else {
-      await this.downloadWithBlobUrl(fileName, stream);
+      this.downloadWithBlobUrl(fileName, blob);
     }
   }
 
-  private static async downloadWithFileSystemAccessAPI(fileName: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  private static async downloadWithFileSystemAccessAPI(fileName: string, blob: Blob): Promise<void> {
     try {
       // @ts-ignore - TypeScript may not recognize showSaveFilePicker
       const fileHandle = await window.showSaveFilePicker({
@@ -23,18 +25,36 @@ export class DownloadHelper {
       });
 
       const writable = await fileHandle.createWritable();
-      await stream.pipeTo(writable);
+      await writable.write(blob);
+      await writable.close();
     } catch (error) {
       console.error('Error downloading with File System Access API:', error);
 
       // Fall back to blob URL method if the user cancels or there's an error
       if (error.name !== 'AbortError') {
-        await this.downloadWithBlobUrl(fileName, stream);
+        this.downloadWithBlobUrl(fileName, blob);
       }
     }
   }
 
-  private static async downloadWithBlobUrl(fileName: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+  private static downloadWithBlobUrl(fileName: string, blob: Blob): void {
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.style.display = 'none';
+
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
+  static async streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
     const reader = stream.getReader();
     const chunks: Uint8Array[] = [];
 
@@ -58,21 +78,6 @@ export class DownloadHelper {
       offset += chunk.length;
     }
 
-    // Create blob and download
-    const blob = new Blob([combinedChunks]);
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.style.display = 'none';
-
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
+    return combinedChunks;
   }
 }
