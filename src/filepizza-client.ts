@@ -1,5 +1,6 @@
 import Peer, { DataConnection } from 'peerjs'
 import { EventEmitter } from './utils/event-emitter'
+import { DownloadHelper } from "./utils/download-helper";
 
 /**
  * Connection status
@@ -1138,6 +1139,27 @@ export class FilePizzaDownloader extends EventEmitter {
   }
 
   /**
+   * Handle error message
+   */
+  private handleError(message: any): void {
+    this.errorMessage = message.error;
+    this.status = ConnectionStatus.Error;
+    this.emit('error', this.errorMessage);
+  }
+
+  /**
+   * Handle report message (channel reported for violation)
+   */
+  private handleReport(): void {
+    this.emit('reported');
+
+    // Redirect to reported page if in browser
+    if (typeof window !== 'undefined') {
+      window.location.href = `${this.filePizzaServerUrl}/reported`;
+    }
+  }
+
+  /**
    * Handle chunk message
    */
   private handleChunk(message: any): void {
@@ -1167,6 +1189,9 @@ export class FilePizzaDownloader extends EventEmitter {
       // Close this file's stream
       fileStream.close();
 
+      // Trigger the file download
+      this.saveFileToDevice(fileName);
+
       // Move to next file if available
       this.currentFileIndex++;
       this.currentFileBytesReceived = 0;
@@ -1177,27 +1202,6 @@ export class FilePizzaDownloader extends EventEmitter {
         this.status = ConnectionStatus.Done;
         this.emit('complete');
       }
-    }
-  }
-
-  /**
-   * Handle error message
-   */
-  private handleError(message: any): void {
-    this.errorMessage = message.error;
-    this.status = ConnectionStatus.Error;
-    this.emit('error', this.errorMessage);
-  }
-
-  /**
-   * Handle report message (channel reported for violation)
-   */
-  private handleReport(): void {
-    this.emit('reported');
-
-    // Redirect to reported page if in browser
-    if (typeof window !== 'undefined') {
-      window.location.href = `${this.filePizzaServerUrl}/reported`;
     }
   }
 
@@ -1227,6 +1231,29 @@ export class FilePizzaDownloader extends EventEmitter {
         enqueue,
         close,
       });
+    }
+  }
+
+  /**
+   * Save file to the user's device
+   */
+  private async saveFileToDevice(fileName: string): Promise<void> {
+    const fileStream = this.fileStreams.get(fileName);
+
+    if (!fileStream) {
+      console.error(`No stream found for file: ${fileName}`);
+      return;
+    }
+
+    try {
+      // Clone the stream since we can only use it once
+      const clonedStream = fileStream.stream.tee()[0];
+
+      // Download the file
+      await DownloadHelper.downloadFile(fileName, clonedStream);
+    } catch (error) {
+      console.error(`Error saving file ${fileName}:`, error);
+      this.emit('error', `Failed to save file: ${error.message}`);
     }
   }
 
