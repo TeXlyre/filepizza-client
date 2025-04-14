@@ -14,7 +14,7 @@ export class FilePizzaUploader extends EventEmitter {
   private password?: string;
   private filePizzaServerUrl: string;
   private channelInfo?: { longSlug: string; shortSlug: string; secret?: string };
-  private providedLongSlug?: string;
+  private sharedSlug?: string;
   private iceServers?: RTCIceServer[];
   private renewalTimer?: NodeJS.Timeout;
 
@@ -25,12 +25,12 @@ export class FilePizzaUploader extends EventEmitter {
   constructor(options: {
     filePizzaServerUrl?: string;
     password?: string;
-    providedLongSlug?: string;
+    sharedSlug?: string;
   } = {}) {
     super();
     this.filePizzaServerUrl = options.filePizzaServerUrl || 'http://localhost:8081';
     this.password = options.password;
-    this.providedLongSlug = options.providedLongSlug;
+    this.sharedSlug = options.sharedSlug;
   }
 
   /**
@@ -68,7 +68,7 @@ export class FilePizzaUploader extends EventEmitter {
 
     // Create channel
     if (this.peer.id) {
-      await this.createChannel(this.peer.id, this.providedLongSlug || undefined);
+      await this.createChannel(this.peer.id, this.sharedSlug || undefined);
       this.startChannelRenewal();
     }
   }
@@ -174,12 +174,12 @@ export class FilePizzaUploader extends EventEmitter {
   /**
    * Create a new channel on the FilePizza server
    */
-  private async createChannel(uploaderPeerID: string, longSlug?: string): Promise<void> {
+  private async createChannel(uploaderPeerID: string, sharedSlug?: string): Promise<void> {
     try {
-      const payload: { uploaderPeerID: string; providedLongSlug?: string } = { uploaderPeerID };
+      const payload: { uploaderPeerID: string; sharedSlug?: string } = { uploaderPeerID };
 
-      if (longSlug) {
-        payload.providedLongSlug = longSlug;
+      if (sharedSlug) {
+        payload.sharedSlug = sharedSlug;
       }
 
       const response = await fetch(`${this.filePizzaServerUrl}/api/create`, {

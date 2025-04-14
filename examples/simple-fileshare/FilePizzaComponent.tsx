@@ -44,8 +44,8 @@ export default function FilePizzaComponent() {
         filePizzaServerUrl: 'http://localhost:8080',
         // You can specify a constant password here
         // password: '123'
-        // You can also specify the channel (slug) but if two upload simultaneously, their data is overwritten
-        // providedLongSlug: 'this/is/my/channel'
+        // You can also specify the shared slug which allows multiple uploads to the same channel
+        sharedSlug: 'this_is_my_shared_slug'
       });
 
       await uploader.initialize();
