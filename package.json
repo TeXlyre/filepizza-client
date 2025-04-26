@@ -18,8 +18,10 @@
     "build": "tsc",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "example": "vite example/vite-bundled-example --port 8081",
-    "build:example": "vite build example/vite-bundled-example"
+    "example": "vite example/vite-bundled-typescript-example --port 8081",
+    "build:pages-example": "cd example/github-pages-example && npm install",
+    "build:example": "vite build example/vite-bundled-typescript-example",
+    "pages-example": "cd example/github-pages-example && npm start"
   },
   "dependencies": {
     "streamsaver": "^2.0.6",

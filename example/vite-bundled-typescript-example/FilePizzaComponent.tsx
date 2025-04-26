@@ -45,7 +45,7 @@ export default function FilePizzaComponent() {
         // You can specify a constant password here
         // password: '123'
         // You can also specify the shared slug which allows multiple uploads to the same channel
-        sharedSlug: 'this_is_my_shared_slug'
+        sharedSlug: 'filepizza-demo'
       });
 
       await uploader.initialize();

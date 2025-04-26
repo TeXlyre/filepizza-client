@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@filepizza/sdk": ["../../dist"]
+    },
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "jsx": "react"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
