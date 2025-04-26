@@ -1,7 +1,7 @@
 // src/index.ts
-export * from './core/types'
-export * from './core/config'
+export * from './types'
 
-export { EventEmitter } from './utils/event-emitter'
-export { DownloadHelper } from './utils/download-helper'
-export { FilePizzaDownloader, FilePizzaUploader } from './filepizza-client'
+export { EventEmitter } from './event-emitter'
+export { DownloadHelper } from './download-helper'
+export { FilePizzaDownloader } from './filepizza-downloader'
+export { FilePizzaUploader } from './filepizza-uploader'

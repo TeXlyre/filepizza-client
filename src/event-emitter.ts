@@ -1,5 +1,5 @@
 // src/utils/event-emitter.ts
-import { EventEmitter as EventEmitterInterface } from '../core/types'
+import { EventEmitter as EventEmitterInterface } from './types'
 
 export class EventEmitter implements EventEmitterInterface {
   private events: Record<string, Array<(...args: any[]) => void>> = {}
