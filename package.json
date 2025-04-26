@@ -1,7 +1,14 @@
 {
-  "name": "@filepizza/sdk",
+  "name": "filepizza-client",
   "version": "0.1.0",
-  "description": "P2P file sharing library for web applications",
+  "description": "Client API for FilePizza, a free peer-to-peer file transfer service.",
+  "author": "Fares Abawi <fares@abawi.me> (https://abawi.me)",
+  "license": "MIT",
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/texlyre/filepizza-client.git"
+  },
+  "homepage": "https://texlyre.github.io/filepizza-client/",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -11,21 +18,21 @@
     "build": "tsc",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "example": "vite examples/simple-fileshare --port 8081",
-    "build:example": "vite build examples/simple-fileshare"
+    "example": "vite example/vite-bundled-example --port 8081",
+    "build:example": "vite build example/vite-bundled-example"
   },
   "dependencies": {
-    "debug": "^4.3.4",
-    "peerjs": "^1.5.1",
     "streamsaver": "^2.0.6",
     "web-streams-polyfill": "^3.2.1"
   },
   "peerDependencies": {
     "next": "^13.0.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "peerjs": "^1.5.1"
   },
   "devDependencies": {
+    "debug": "^4.3.4",
     "@types/debug": "^4.1.8",
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.5",
