@@ -252,10 +252,9 @@ export class FilePizzaDownloader extends EventEmitter {
   }
 
   /**
-   * Look up the uploader's peer ID from the FilePizza server
+   * Extract uploader peer IDs from the FilePizza server when multiple uploaders are present
    */
-  private async lookupUploaderPeerID(slug: string): Promise<string> {
-    console.log("this is the download url", `${this.filePizzaServerUrl}/download/${slug}`)
+  private async extractUploaderPeerIDs(slug: string): Promise<string[]> {
     try {
       const response = await fetch(`${this.filePizzaServerUrl}/download/${slug}`);
 
@@ -269,17 +268,75 @@ export class FilePizzaDownloader extends EventEmitter {
         throw new Error('Received empty response from server');
       }
 
-      // Updated regex to match the JSON format with escaped quotes
-      const match = html.match(/\\"uploaderPeerID\\":\\"([^\\]+)\\"/);
+      // Match either "uploaderPeerID" (for single uploader) or "primaryUploaderID" and "additionalUploaders" (for multiple)
+      const primaryMatch = html.match(/\\"primaryUploaderID\\":\\"([^\\]+)\\"/);
+      const singleMatch = html.match(/\\"uploaderPeerID\\":\\"([^\\]+)\\"/);
 
-      if (!match || !match[1]) {
-        throw new Error('Could not find uploader peer ID');
+      if (primaryMatch && primaryMatch[1]) {
+        // Handle multiple uploader case
+        const uploaderIDs = [primaryMatch[1]];
+
+        // Look for additional uploaders
+        const additionalMatch = html.match(/\\"additionalUploaders\\":\[([^\]]+)\]/);
+        if (additionalMatch && additionalMatch[1]) {
+          // Parse additional uploader IDs from JSON string
+          const additionalIDs = additionalMatch[1].split(',')
+            .map(id => id.trim().replace(/\\"|"/g, ''))
+            .filter(id => id.length > 0);
+
+          uploaderIDs.push(...additionalIDs);
+        }
+
+        return uploaderIDs;
+      } else if (singleMatch && singleMatch[1]) {
+        // Handle single uploader case
+        return [singleMatch[1]];
       }
 
-      return match[1];
+      throw new Error('Could not find uploader peer ID');
+    } catch (error) {
+      console.error('Error extracting uploader peer IDs:', error);
+      throw new Error('Failed to look up uploader information');
+    }
+  }
+
+  /**
+   * Look up the uploader's peer ID from the FilePizza server
+   */
+  private async lookupUploaderPeerID(slug: string): Promise<string> {
+    try {
+      const uploaderIDs = await this.extractUploaderPeerIDs(slug);
+
+      if (uploaderIDs.length === 0) {
+        throw new Error('No uploader peer IDs found');
+      }
+
+      // Return the first uploader ID by default
+      return uploaderIDs[0];
     } catch (error) {
       console.error('Error looking up uploader peer ID:', error);
       throw new Error('Failed to look up uploader information');
+    }
+  }
+
+  /**
+   * Connect to a specific uploader by ID
+   */
+  public async getAvailableUploaders(urlOrSlug: string): Promise<string[]> {
+    const slug = this.extractSlug(urlOrSlug);
+    return this.extractUploaderPeerIDs(slug);
+  }
+
+  /**
+   * Connect to a specific uploader by ID
+   */
+  public async connectToUploader(uploaderId: string): Promise<boolean> {
+    try {
+      return this.connectToPeer(uploaderId);
+    } catch (error) {
+      this.errorMessage = `Failed to connect to uploader: ${error instanceof Error ? error.message : String(error)}`;
+      this.emit('error', this.errorMessage);
+      return false;
     }
   }
 

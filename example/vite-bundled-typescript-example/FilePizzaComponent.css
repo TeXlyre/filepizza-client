@@ -301,3 +301,42 @@ input::file-selector-button {
 .cancel-button:hover {
   background-color: #d32f2f;
 }
+
+/* Uploader Selection */
+.uploader-selection {
+  background-color: #f0f7ff;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.uploader-selection h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.uploader-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.uploader-buttons button {
+  padding: 8px 16px;
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.uploader-buttons button.selected {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.uploader-buttons button:hover {
+  background-color: #4a90e2;
+  color: white;
+}
