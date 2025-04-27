@@ -171,10 +171,20 @@ export class FilePizzaDownloader extends EventEmitter {
   /**
    * Cancel the download
    */
+/**
+ * Cancel the download
+ */
   cancelDownload(): void {
     // Close all file streams
-    for (const { close } of this.fileStreams.values()) {
-      close();
+    for (const fileStreamData of this.fileStreams.values()) {
+      // Check if the stream is already closed before closing it
+      if (fileStreamData.stream.locked) {
+        try {
+          fileStreamData.close();
+        } catch (error) {
+          console.warn('Error closing stream:', error);
+        }
+      }
     }
     this.fileStreams.clear();
 
