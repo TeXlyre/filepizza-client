@@ -12,6 +12,8 @@ export default function FilePizzaComponent() {
   const [downloadUrl, setDownloadUrl] = useState('');
   const [completedFiles, setCompletedFiles] = useState([]);
   const [downloadingFile, setDownloadingFile] = useState(null);
+  const [availableUploaders, setAvailableUploaders] = useState([]);
+  const [selectedUploader, setSelectedUploader] = useState(0);
 
   const uploaderRef = useRef(null);
   const downloaderRef = useRef(null);
@@ -84,6 +86,7 @@ export default function FilePizzaComponent() {
     setMode('download');
     setError(null);
     setCompletedFiles([]);
+    setAvailableUploaders([]);
 
     try {
       const downloader = new FilePizzaDownloader({
@@ -141,14 +144,58 @@ export default function FilePizzaComponent() {
     if (!downloaderRef.current || !downloadUrl) return;
 
     try {
-      const connected = await downloaderRef.current.connect(downloadUrl);
+      // First check if there are multiple uploaders
+      const uploaders = await downloaderRef.current.getAvailableUploaders(downloadUrl);
 
-      if (!connected) {
-        setError('Failed to connect to FilePizza');
+      if (uploaders.length > 1) {
+        // Multiple uploaders found, set them in state
+        setAvailableUploaders(uploaders);
+        setSelectedUploader(0);
+
+        // Connect to the first uploader
+        const connected = await downloaderRef.current.connectToUploader(uploaders[0]);
+
+        if (!connected) {
+          setError('Failed to connect to FilePizza uploader');
+        }
+      } else if (uploaders.length === 1) {
+        // Single uploader, connect normally
+        const connected = await downloaderRef.current.connect(downloadUrl);
+
+        if (!connected) {
+          setError('Failed to connect to FilePizza');
+        }
+      } else {
+        setError('No uploaders found for this link');
       }
     } catch (err) {
       console.error('Connect error:', err);
       setError(err.message || 'Failed to connect');
+    }
+  };
+
+  // Switch between uploaders
+  const switchUploader = async (index) => {
+    if (!downloaderRef.current || !availableUploaders[index]) return;
+
+    try {
+      // Reset state for new connection
+      setFiles([]);
+      setProgress(null);
+      setCompletedFiles([]);
+      setIsPasswordRequired(false);
+      setError(null);
+
+      // Connect to the selected uploader
+      setSelectedUploader(index);
+      const connected = await downloaderRef.current.connectToUploader(availableUploaders[index]);
+
+      if (!connected) {
+        setError('Failed to connect to selected uploader');
+      }
+    } catch (err) {
+      console.error('Uploader switch error:', err);
+      setError(err.message || 'Failed to switch uploader');
     }
   };
 
@@ -228,6 +275,8 @@ export default function FilePizzaComponent() {
     setDownloadUrl('');
     setCompletedFiles([]);
     setDownloadingFile(null);
+    setAvailableUploaders([]);
+    setSelectedUploader(0);
   };
 
   // Format progress percentage
@@ -361,6 +410,24 @@ export default function FilePizzaComponent() {
         <div className="downloader">
           <h2>Download Files</h2>
 
+          {/* Uploader selection UI */}
+          {availableUploaders.length > 1 && (
+            <div className="uploader-selection">
+              <h3>Multiple uploaders available:</h3>
+              <div className="uploader-buttons">
+                {availableUploaders.map((uploaderId, index) => (
+                  <button
+                    key={index}
+                    className={selectedUploader === index ? 'selected' : ''}
+                    onClick={() => switchUploader(index)}
+                  >
+                    Uploader {index + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!files.length && !isPasswordRequired && (
             <div className="download-form">
               <div className="url-input">
@@ -416,7 +483,7 @@ export default function FilePizzaComponent() {
             </div>
           )}
 
-{/* Progress */}
+          {/* Progress */}
           {progress && (
             <div className="progress">
               <div className="progress-info">
