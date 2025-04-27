@@ -11,9 +11,6 @@
   "homepage": "https://texlyre.github.io/filepizza-client/",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",
@@ -28,7 +25,7 @@
     "web-streams-polyfill": "^3.2.1"
   },
   "peerDependencies": {
-    "next": "^13.0.0",
+    "next": "^14.2.28",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "peerjs": "^1.5.1"
@@ -49,5 +46,20 @@
     "@vitejs/plugin-react": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
-  }
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "filepizza",
+    "filepizza-server",
+    "filepizza-2.0",
+    "webrtc",
+    "p2p",
+    "peer-to-peer",
+    "file-transfer"
+  ]
 }
