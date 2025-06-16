@@ -108,9 +108,6 @@ export class FilePizzaDownloader extends EventEmitter {
    * Start downloading the files
    */
   async startDownload(): Promise<void> {
-    // This is just a stub - actual implementation will depend on how you want to save files
-    // The real FilePizza implementation uses the StreamSaver library
-
     if (!this.connection) {
       throw new Error('Not connected');
     }
