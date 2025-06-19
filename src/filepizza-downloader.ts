@@ -74,20 +74,40 @@ export class FilePizzaDownloader extends EventEmitter {
    * Connect to an uploader using a FilePizza URL or slug
    */
   async connect(urlOrSlug: string): Promise<boolean> {
-    // Extract slug from URL if needed
+    this.resetConnectionState();
+
     const slug = this.extractSlug(urlOrSlug);
 
     try {
-      // Look up the uploader's peer ID
       const uploaderPeerID = await this.lookupUploaderPeerID(slug);
-
-      // Now connect directly to the uploader
       return this.connectToPeer(uploaderPeerID);
     } catch (error) {
       this.errorMessage = `Failed to connect: ${error instanceof Error ? error.message : String(error)}`;
       this.emit('error', this.errorMessage);
       return false;
     }
+  }
+
+  /**
+   * Reset the connection state to begin new download
+   */
+  private resetConnectionState(): void {
+    this.cleanupFileStreams();
+
+    this.filesInfo = [];
+    this.currentFileIndex = 0;
+    this.currentFileBytesReceived = 0;
+    this.totalBytesReceived = 0;
+    this.totalBytes = 0;
+    this.completedFiles = [];
+    this.isPasswordRequired = false;
+    this.isPasswordInvalid = false;
+    this.errorMessage = undefined;
+
+    if (this.connection && this.connection.open) {
+      this.connection.close();
+    }
+    this.connection = undefined;
   }
 
   /**
@@ -168,24 +188,9 @@ export class FilePizzaDownloader extends EventEmitter {
   /**
    * Cancel the download
    */
-/**
- * Cancel the download
- */
   cancelDownload(): void {
-    // Close all file streams
-    for (const fileStreamData of this.fileStreams.values()) {
-      // Check if the stream is already closed before closing it
-      if (fileStreamData.stream.locked) {
-        try {
-          fileStreamData.close();
-        } catch (error) {
-          console.warn('Error closing stream:', error);
-        }
-      }
-    }
-    this.fileStreams.clear();
+    this.cleanupFileStreams();
 
-    // Close the connection
     if (this.connection) {
       if (this.connection.open) {
         this.connection.close();
@@ -195,6 +200,22 @@ export class FilePizzaDownloader extends EventEmitter {
 
     this.status = ConnectionStatus.Closed;
     this.emit('cancelled');
+  }
+
+  /**
+   * Cleanup resources when done
+   */
+  private cleanupFileStreams(): void {
+    for (const [fileName, fileStreamData] of this.fileStreams.entries()) {
+      try {
+        if (fileStreamData.stream.locked === false) {
+          fileStreamData.close();
+        }
+      } catch (error) {
+        console.warn(`Error closing stream for ${fileName}:`, error);
+      }
+    }
+    this.fileStreams.clear();
   }
 
   /**
@@ -535,28 +556,29 @@ export class FilePizzaDownloader extends EventEmitter {
       return;
     }
 
-    // Convert bytes to Uint8Array if needed
     const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
 
-    // Update progress
     this.currentFileBytesReceived += data.byteLength;
     this.totalBytesReceived += data.byteLength;
 
-    // Add to file stream
-    fileStream.enqueue(data);
+    try {
+      fileStream.enqueue(data);
+    } catch (error) {
+      console.error(`Error enqueueing data for ${fileName}:`, error);
+      return;
+    }
 
-    // Emit progress
     this.emit('progress', this.getProgress());
 
-    // Handle file completion
     if (final) {
-      // Close this file's stream
-      fileStream.close();
+      try {
+        fileStream.close();
+      } catch (error) {
+        console.warn(`Error closing stream for ${fileName}:`, error);
+      }
 
-      // Store the completed file
       this.storeCompletedFile(fileName);
 
-      // Move to next file if available
       this.currentFileIndex++;
       this.currentFileBytesReceived = 0;
 
@@ -573,7 +595,7 @@ export class FilePizzaDownloader extends EventEmitter {
    * Initialize streams for all files
    */
   private initializeFileStreams(): void {
-    this.fileStreams.clear();
+    this.cleanupFileStreams();
 
     for (const fileInfo of this.filesInfo) {
       let enqueue: ((chunk: Uint8Array) => void) | null = null;
@@ -582,7 +604,13 @@ export class FilePizzaDownloader extends EventEmitter {
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
           enqueue = (chunk: Uint8Array) => controller.enqueue(chunk);
-          close = () => controller.close();
+          close = () => {
+            try {
+              controller.close();
+            } catch (error) {
+              console.warn('Controller already closed:', error);
+            }
+          };
         },
       });
 
@@ -611,21 +639,14 @@ export class FilePizzaDownloader extends EventEmitter {
     }
 
     try {
-      // Clone the stream since we're going to use it
-      const [streamToRead, streamToStore] = fileStream.stream.tee();
+      const fileData = await DownloadHelper.streamToUint8Array(fileStream.stream);
 
-      // Convert stream to Uint8Array
-      const fileData = await DownloadHelper.streamToUint8Array(streamToRead);
-
-      // Store the completed file
       const completedFile: CompletedFile = {
         ...fileInfo,
         data: fileData,
       };
 
       this.completedFiles.push(completedFile);
-
-      // Emit fileComplete event
       this.emit('fileComplete', completedFile);
     } catch (error) {
       console.error(`Error storing file ${fileName}:`, error);
