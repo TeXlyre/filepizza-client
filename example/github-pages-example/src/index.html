@@ -76,8 +76,14 @@ await downloader.startDownload();</code></pre>
     </section>
   </main>
 
-  <footer>
-    <p>MIT License &copy; 2025 <a href="https://abawi.me">Fares Abawi</a></p>
-  </footer>
+<footer>
+  <p>MIT License &copy; <span id="year"></span> <a href="https://abawi.me">Fares Abawi</a></p>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+
 </body>
 </html>
