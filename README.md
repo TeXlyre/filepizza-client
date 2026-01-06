@@ -68,7 +68,7 @@ await downloader.startDownload();
 
 Make sure to have the [FilePizza server](https://github.com/TeXlyre/filepizza-server) running locally or specify the server URL in the example code. 
 
-By default, the example uses `https://filepizza.emaily.re` as the demo server URL. This server allows origins from `http://localhost:8081` so you can immediately test the API without requiring to run the server locally. 
+By default, the example uses `https://filepizza.texlyre.org` as the demo server URL. This server allows origins from `http://localhost:8081` so you can immediately test the API without requiring to run the server locally. 
 
 *WARNING: The demo server (signaling and TURN as fallback) is not intended for production use and may be subject to rate limits or downtime. For production use, consider setting up your own [FilePizza server](https://github.com/TeXlyre/filepizza-server?tab=readme-ov-file#deployment-with-cloudflare-tunnel).*
 
