@@ -38,7 +38,7 @@ export default function FilePizzaComponent() {
     try {
       const uploader = new FilePizzaUploader({
         // Using demo server for GitHub Pages demo
-        filePizzaServerUrl: 'https://filepizza.emaily.re',
+        filePizzaServerUrl: 'https://filepizza.texlyre.org',
         // You can specify a shared slug for your demo here
         sharedSlug: 'filepizza-github-demo'
       });
@@ -91,7 +91,7 @@ export default function FilePizzaComponent() {
     try {
       const downloader = new FilePizzaDownloader({
         // Using demo server for GitHub Pages demo
-        filePizzaServerUrl: 'https://filepizza.emaily.re'
+        filePizzaServerUrl: 'https://filepizza.texlyre.org'
       });
 
       await downloader.initialize();
