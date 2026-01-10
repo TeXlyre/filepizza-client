@@ -1,3 +1,4 @@
+// src/filepizza-uploader.ts
 import Peer, { DataConnection } from 'peerjs'
 import { EventEmitter } from './event-emitter'
 import { FileInfo, ProgressInfo, ConnectionInfo, ConnectionStatus, MessageType } from './types';
@@ -622,14 +623,14 @@ export class FilePizzaUploader extends EventEmitter {
    * Get connection info for all connections
    */
   public getConnectionInfoAll(): ConnectionInfo[] {
-      const connectionInfos: ConnectionInfo[] = [];
+    const connectionInfos: ConnectionInfo[] = [];
 
-      for (const [peerId, context] of this.connections.entries()) {
+    for (const [peerId, context] of this.connections.entries()) {
       const connectionInfo = this.getConnectionInfo(peerId);
       connectionInfos.push(connectionInfo);
-      }
+    }
 
-      return connectionInfos;
+    return connectionInfos;
   }
 
   /**
