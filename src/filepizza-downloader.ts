@@ -1,4 +1,3 @@
-// src/filepizza-downloader.ts
 import Peer, { DataConnection } from 'peerjs'
 import { EventEmitter } from './event-emitter'
 import { DownloadHelper } from './download-helper'
@@ -23,6 +22,13 @@ type ChannelLookupResponse = {
   additionalUploaders?: string[]
 }
 
+type FileStreamEntry = {
+  stream: ReadableStream<Uint8Array>
+  enqueue: (chunk: Uint8Array) => void
+  close: () => void
+  closed: boolean
+}
+
 /**
  * FilePizza Downloader - connects to FilePizza uploads.
  */
@@ -36,14 +42,7 @@ export class FilePizzaDownloader extends EventEmitter {
   private totalBytesReceived = 0
   private totalBytes = 0
   private status = ConnectionStatus.Pending
-  private fileStreams: Map<
-    string,
-    {
-      stream: ReadableStream<Uint8Array>
-      enqueue: (chunk: Uint8Array) => void
-      close: () => void
-    }
-  > = new Map()
+  private fileStreams: Map<string, FileStreamEntry> = new Map()
   private isPasswordRequired = false
   private isPasswordInvalid = false
   private errorMessage?: string
@@ -183,16 +182,9 @@ export class FilePizzaDownloader extends EventEmitter {
   }
 
   private cleanupFileStreams(): void {
-    for (const [fileName, fileStreamData] of this.fileStreams.entries()) {
-      try {
-        if (fileStreamData.stream.locked === false) {
-          fileStreamData.close()
-        }
-      } catch (error) {
-        console.warn(`Error closing stream for ${fileName}:`, error)
-      }
+    for (const entry of this.fileStreams.values()) {
+      entry.close()
     }
-
     this.fileStreams.clear()
   }
 
@@ -502,12 +494,7 @@ export class FilePizzaDownloader extends EventEmitter {
     this.emit('progress', this.getProgress())
 
     if (final) {
-      try {
-        fileStream.close()
-      } catch (error) {
-        console.warn(`Error closing stream for ${fileName}:`, error)
-      }
-
+      fileStream.close()
       this.storeCompletedFile(fileName)
 
       this.currentFileIndex++
@@ -527,31 +514,38 @@ export class FilePizzaDownloader extends EventEmitter {
     this.cleanupFileStreams()
 
     for (const fileInfo of this.filesInfo) {
-      let enqueue: ((chunk: Uint8Array) => void) | null = null
-      let close: (() => void) | null = null
+      let enqueueFn: ((chunk: Uint8Array) => void) | null = null
+      let closeFn: (() => void) | null = null
 
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
-          enqueue = (chunk: Uint8Array) => controller.enqueue(chunk)
-          close = () => {
-            try {
-              controller.close()
-            } catch (error) {
-              console.warn('Controller already closed:', error)
-            }
-          }
+          enqueueFn = (chunk: Uint8Array) => controller.enqueue(chunk)
+          closeFn = () => controller.close()
         },
       })
 
-      if (!enqueue || !close) {
+      if (!enqueueFn || !closeFn) {
         throw new Error('Failed to initialize stream controllers')
       }
 
-      this.fileStreams.set(fileInfo.fileName, {
+      const fileName = fileInfo.fileName
+      const safeClose = closeFn
+      const entry: FileStreamEntry = {
         stream,
-        enqueue,
-        close,
-      })
+        enqueue: enqueueFn,
+        closed: false,
+        close: () => {
+          if (entry.closed) return
+          entry.closed = true
+          try {
+            safeClose()
+          } catch (error) {
+            console.warn(`Error closing stream for ${fileName}:`, error)
+          }
+        },
+      }
+
+      this.fileStreams.set(fileName, entry)
     }
   }
 
