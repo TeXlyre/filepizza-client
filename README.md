@@ -28,8 +28,10 @@ import { FilePizzaUploader } from 'filepizza-client';
 
 const uploader = new FilePizzaUploader({
   filePizzaServerUrl: 'https://your-filepizza-server.com',
-  // You can optionally specify an additional shared slug where multiple uploaders can connect and share files
-  sharedSlug: 'filepizza-demo'
+
+  // You can optionally specify an additional shared slug
+  // where multiple uploaders can connect and share files
+  sharedSlug: 'filepizza-demo',
 });
 
 await uploader.initialize();
@@ -39,8 +41,13 @@ uploader.on('progress', (progressInfo) => {
 });
 
 uploader.setFiles(fileList); // From an input element
+
 const links = uploader.getShareableLinks();
-console.log(`Shareable links: ${links.join(', ')}`);
+
+if (links) {
+  console.log(`Long link: ${links.long}`);
+  console.log(`Short link: ${links.short}`);
+}
 ```
 
 Set up a FilePizza client instance and use it to download files:
@@ -49,7 +56,7 @@ Set up a FilePizza client instance and use it to download files:
 import { FilePizzaDownloader } from 'filepizza-client';
 
 const downloader = new FilePizzaDownloader({
-  filePizzaServerUrl: 'https://your-filepizza-server.com'
+  filePizzaServerUrl: 'https://your-filepizza-server.com',
 });
 
 await downloader.initialize();
@@ -61,6 +68,45 @@ downloader.on('progress', (progressInfo) => {
 await downloader.connect(filePizzaUrl);
 await downloader.startDownload();
 ```
+
+By default, the client:
+
+- Fetches ICE server configuration from the FilePizza server
+- Attempts to discover a PeerJS signaling server from:
+  ```
+  /api/peerjs-servers
+  ```
+- Falls back to PeerJS defaults if no signaling server is configured
+
+You can also explicitly override the PeerJS signaling server configuration.
+
+The uploader and downloader must use the same PeerJS signaling server in order to connect:
+
+```javascript
+import {
+  FilePizzaUploader,
+  FilePizzaDownloader,
+} from 'filepizza-client';
+
+const peerJSSignalingServer = {
+  host: 'peerjs.example.com',
+  port: 443,
+  path: '/',
+  secure: true,
+};
+
+const uploader = new FilePizzaUploader({
+  filePizzaServerUrl: 'https://your-filepizza-server.com',
+  peerJSSignalingServer,
+});
+
+const downloader = new FilePizzaDownloader({
+  filePizzaServerUrl: 'https://your-filepizza-server.com',
+  peerJSSignalingServer,
+});
+```
+
+If no `peerJSSignalingServer` is provided, the client will use the FilePizza server configuration (if available) or default PeerJS behavior.
 
 ## Examples
 

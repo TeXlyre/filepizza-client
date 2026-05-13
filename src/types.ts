@@ -1,9 +1,16 @@
-// src/core/types.ts
+// src/types.ts
+import type { PeerOptions } from 'peerjs'
+
 export interface EventEmitter {
-  on(event: string, listener: (...args: any[]) => void): this;
-  off(event: string, listener: (...args: any[]) => void): this;
-  emit(event: string, ...args: any[]): boolean;
+  on(event: string, listener: (...args: any[]) => void): this
+  off(event: string, listener: (...args: any[]) => void): this
+  emit(event: string, ...args: any[]): boolean
 }
+
+export type PeerJSSignalingServer = Pick<
+  PeerOptions,
+  'host' | 'port' | 'path' | 'secure' | 'key' | 'token' | 'pingInterval'
+>
 
 /**
  * Connection status
@@ -18,63 +25,65 @@ export enum ConnectionStatus {
   Authenticating = 'AUTHENTICATING',
   InvalidPassword = 'INVALID_PASSWORD',
   Closed = 'CLOSED',
-  Error = 'ERROR'
+  Error = 'ERROR',
 }
 
 /**
  * File information
  */
 export interface FileInfo {
-  fileName: string;
-  size: number;
-  type: string;
+  fileName: string
+  size: number
+  type: string
 }
 
 /**
  * Interface for a completed file ready to download
  */
 export interface CompletedFile extends FileInfo {
-  data: Uint8Array;
-  downloadUrl?: string;
+  data: Uint8Array
+  downloadUrl?: string
 }
 
 /**
  * Progress information
  */
 export interface ProgressInfo {
-  fileIndex: number;
-  fileName: string;
-  totalFiles: number;
-  currentFileProgress: number;
-  overallProgress: number;
-  bytesTransferred: number;
-  totalBytes: number;
+  fileIndex: number
+  fileName: string
+  totalFiles: number
+  currentFileProgress: number
+  overallProgress: number
+  bytesTransferred: number
+  totalBytes: number
 }
 
 /**
  * Connection information
  */
 export interface ConnectionInfo {
-  id: string;
-  status: ConnectionStatus;
-  browserName?: string;
-  browserVersion?: string;
-  osName?: string;
-  osVersion?: string;
-  mobileVendor?: string;
-  mobileModel?: string;
+  id: string
+  status: ConnectionStatus
+  browserName?: string
+  browserVersion?: string
+  osName?: string
+  osVersion?: string
+  mobileVendor?: string
+  mobileModel?: string
 }
 
 /**
- * Message types for peer-to-peer communication
+ * Message types for peer-to-peer communication.
+ *
+ * This mirrors the server frontend protocol in filepizza-server/src/messages.ts.
  */
 export enum MessageType {
   RequestInfo = 'RequestInfo',
   Info = 'Info',
   Start = 'Start',
   Chunk = 'Chunk',
+  ChunkAck = 'ChunkAck',
   Pause = 'Pause',
-  Resume = 'Resume',
   Done = 'Done',
   Error = 'Error',
   PasswordRequired = 'PasswordRequired',
