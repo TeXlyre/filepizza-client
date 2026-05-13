@@ -1,6 +1,6 @@
 {
   "name": "filepizza-client",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Client API for FilePizza, a free peer-to-peer file transfer service.",
   "author": "Fares Abawi <fares@abawi.me> (https://abawi.me)",
   "license": "MIT",

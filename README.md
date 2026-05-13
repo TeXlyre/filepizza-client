@@ -74,7 +74,7 @@ By default, the client:
 - Fetches ICE server configuration from the FilePizza server
 - Attempts to discover a PeerJS signaling server from:
   ```
-  /api/peerjs-servers
+  /api/ice
   ```
 - Falls back to PeerJS defaults if no signaling server is configured
 
